@@ -9,8 +9,6 @@ export async function DELETE(req: Request, { params }: { params: IParams }) {
   try {
     const { todoId } = params;
 
-    console.log(`TODO ID ${todoId}`);
-
     if (!todoId) {
       throw new NextResponse("Invalid ID", {
         status: 401,

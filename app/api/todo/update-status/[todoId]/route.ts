@@ -10,7 +10,7 @@ export async function POST(req: Request, { params }: { params: IParams }) {
 
     if (!todoId) {
       throw new NextResponse("Invalid ID", {
-        status: 404,
+        status: 401,
       });
     }
 
