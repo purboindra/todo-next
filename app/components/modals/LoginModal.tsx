@@ -1,20 +1,21 @@
 "use client";
 
-import useRegisterModal from "@/app/hooks/useRegisterModal";
 import Modal from "./Modal";
 import Input from "../inputs/Input";
 import React, { useState } from "react";
-import axios from "axios";
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { FieldValues, SubmitHandler, useForm } from "react-hook-form";
 import { toast } from "react-hot-toast";
+import useLoginModal from "@/app/hooks/useLoginModal";
 
-const RegisterModal = () => {
+const LoginModal = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const registerModal = useRegisterModal();
+  const loginModal = useLoginModal();
 
   const handleOnChange = (open: boolean) => {
     if (!open) {
-      registerModal.onClose();
+      loginModal.onClose();
     }
   };
 
@@ -25,58 +26,40 @@ const RegisterModal = () => {
     formState: { errors },
   } = useForm<FieldValues>({
     defaultValues: {
-      name: "",
-      fullName: "",
       password: "",
       email: "",
     },
   });
 
   const onSubmit: SubmitHandler<FieldValues> = (value) => {
-    const createdAt = new Date(Date.now());
     setIsLoading(true);
-    axios
-      .post("/api/user/register", {
-        data: {
-          password: value.password,
-          createdAt: createdAt,
-          emailVerified: value.email,
-          name: value.name,
-          email: value.email,
-        },
+    signIn("credentials", {
+      ...value,
+      redirect: false,
+    })
+      .then((callback) => {
+        setIsLoading(false);
+        console.log("CALLBACK SIGN IN", callback);
+        if (callback?.error) {
+          toast.error("Something went wrong");
+        }
+        if (callback?.ok && !callback.error) {
+          toast.success("Succesfully Sign In!");
+        }
       })
-      .then((resp) => {
-        toast.success("Success create user!");
-        registerModal.onClose();
-        reset();
-      })
-      .catch((e) => {
-        console.log("ERROR CREATE USER", e);
-        toast.error("Something went wrong!");
-      })
-      .finally(() => setIsLoading(false));
+      .catch((e) => console.log(`ERROR FROM SIGN IN ${e}`));
   };
 
   return (
     <Modal
-      isOpen={registerModal.isOpen}
+      isOpen={loginModal.isOpen}
       onChange={handleOnChange}
-      title="Register"
+      title="Welcome Back!"
     >
       <div className="flex flex-col">
         <p className="text-neutral-400 font-light text-sm leading-normal">
-          Register first to add your todo!
+          Login to add your todo!
         </p>
-        <Input
-          label="Name"
-          placeholder="Add your name"
-          {...register("name", { required: true })}
-        />
-        <Input
-          label="Full Name"
-          placeholder="Add your full name"
-          {...register("fullName", { required: true })}
-        />
         <Input
           label="Email"
           placeholder="Add your email"
@@ -103,4 +86,4 @@ const RegisterModal = () => {
   );
 };
 
-export default RegisterModal;
+export default LoginModal;

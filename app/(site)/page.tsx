@@ -5,6 +5,7 @@ import { FieldValues, SubmitHandler, useForm } from "react-hook-form";
 import axios from "axios";
 import { toast } from "react-toast";
 import { FiCheck, FiDelete } from "react-icons/fi";
+import useLoginModal from "../hooks/useLoginModal";
 import useRegisterModal from "../hooks/useRegisterModal";
 
 interface TodoProps {
@@ -20,6 +21,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingTodo, setIsLoadingTodo] = useState(false);
   const registerModal = useRegisterModal();
+  const loginModal = useLoginModal();
 
   const {
     register,
@@ -163,7 +165,7 @@ export default function Home() {
             <button
               disabled={isLoading}
               // onClick={() => handleSubmit(addTodo)}
-              onClick={registerModal.onOpen}
+              onClick={loginModal.onOpen}
               className={
                 !isLoading
                   ? "mt-4 bg-orange-500 px-5 py-2 shadow-lg shadow-orange-300 rounded-md  text-white font-semibold text-lg"

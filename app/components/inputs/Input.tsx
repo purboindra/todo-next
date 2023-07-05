@@ -43,3 +43,64 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
 Input.displayName = "Input";
 
 export default Input;
+
+/*
+
+export async function POST(req: Request) {
+  try {
+    const body = await req.json();
+    const { email, name } = body.data;
+
+    const findEmail = await prisma.user.findUnique({
+      where: {
+        email: email,
+      },
+    });
+
+    if (findEmail) {
+      throw new NextResponse("Invalid Email", {
+        status: 401,
+        statusText: "Email already used!",
+      });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(body.data.password, salt);
+
+    const user = await prisma.user.create({
+      data: {
+        createdAt: body.data.createdAt,
+        email: email,
+        emailVerified: email,
+        hashedPassword: hashedPassword,
+        image: "",
+        name: name,
+        updatedAt: null,
+      },
+    });
+
+    await prisma.user.findMany({
+      include: {
+        todos: true,
+      },
+    });
+
+    if (!user) {
+      throw new NextResponse("Failed Create User", {
+        status: 401,
+      });
+    }
+
+    return NextResponse.json(user, {
+      status: 200,
+      statusText: "User Successfully Created!",
+    });
+  } catch (error) {
+    console.log("ERROR REGISTER USER ROUTE", error);
+    return new NextResponse("Internal Server Error", {
+      status: 500,
+    });
+  }
+}
+
+*/

@@ -1,11 +1,15 @@
 "use client";
 
-import useRegisterModal from "@/app/hooks/useRegisterModal";
-import Modal from "./Modal";
 import RegisterModal from "./RegisterModal";
+import LoginModal from "./LoginModal";
 
 const ModalProvider = () => {
-  return <RegisterModal />;
+  return (
+    <>
+      <RegisterModal />
+      <LoginModal />
+    </>
+  );
 };
 
 export default ModalProvider;
