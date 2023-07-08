@@ -19,7 +19,7 @@ export async function POST(req: Request, { params }: { params: IParams }) {
         id: todoId,
       },
       data: {
-        status: true,
+        isComplete: true,
       },
     });
 

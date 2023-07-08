@@ -3,20 +3,32 @@
 import useRegisterModal from "@/app/hooks/useRegisterModal";
 import Modal from "./Modal";
 import Input from "../inputs/Input";
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import axios from "axios";
 import { FieldValues, SubmitHandler, useForm } from "react-hook-form";
 import { toast } from "react-hot-toast";
+import useLoginModal from "@/app/hooks/useLoginModal";
 
 const RegisterModal = () => {
   const [isLoading, setIsLoading] = useState(false);
   const registerModal = useRegisterModal();
+  const loginModal = useLoginModal();
 
   const handleOnChange = (open: boolean) => {
     if (!open) {
       registerModal.onClose();
     }
   };
+
+  const handleModal = useCallback(() => {
+    if (registerModal.isOpen) {
+      registerModal.onClose();
+      loginModal.onOpen();
+    } else {
+      registerModal.onOpen();
+      loginModal.onClose();
+    }
+  }, [loginModal, registerModal]);
 
   const {
     register,
@@ -68,27 +80,40 @@ const RegisterModal = () => {
           Register first to add your todo!
         </p>
         <Input
+          disabled={isLoading}
           label="Name"
           placeholder="Add your name"
           {...register("name", { required: true })}
         />
         <Input
+          disabled={isLoading}
           label="Full Name"
           placeholder="Add your full name"
           {...register("fullName", { required: true })}
         />
         <Input
+          disabled={isLoading}
           label="Email"
           placeholder="Add your email"
           {...register("email", { required: true })}
         />
         <Input
+          disabled={isLoading}
           label="Password"
           placeholder="Add your password"
           type="password"
           {...register("password", { required: true })}
         />
+        <div className="mt-1 mb-2">
+          <p
+            onClick={handleModal}
+            className="text-lg font-medium text-neutral-800 hover:text-neutral-500 cursor-pointer"
+          >
+            Already have an account?
+          </p>
+        </div>
         <button
+          disabled={isLoading}
           onClick={handleSubmit(onSubmit)}
           className={
             !isLoading

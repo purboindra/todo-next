@@ -6,7 +6,7 @@ import axios from "axios";
 import { toast } from "react-toast";
 import { FiCheck, FiDelete } from "react-icons/fi";
 import useLoginModal from "../hooks/useLoginModal";
-import useRegisterModal from "../hooks/useRegisterModal";
+import { signOut, useSession } from "next-auth/react";
 
 interface TodoProps {
   id: string;
@@ -20,8 +20,8 @@ export default function Home() {
   const [todo, setTodo] = useState<TodoProps[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingTodo, setIsLoadingTodo] = useState(false);
-  const registerModal = useRegisterModal();
   const loginModal = useLoginModal();
+  const { data: session } = useSession();
 
   const {
     register,
@@ -34,64 +34,42 @@ export default function Home() {
     },
   });
 
-  const getAllTodo = async () => {
-    try {
-      setIsLoadingTodo(true);
-      setTodo([]);
-      const response = await axios.get("/api/todo/get");
-      const getTodo = response.data.map((item: any) => ({
-        id: item.id,
-        userId: "",
-        createdAt: item.createdAt,
-        isComplete: item.status,
-        title: item.title,
-        updatedAt: item.updatedAt,
-      }));
-      setTodo((prev) => prev.concat(getTodo));
-    } catch (error) {
-      console.log(`ERROR GET ALL TODO ${error}`);
-    } finally {
-      setIsLoadingTodo(false);
-    }
+  const submitTodo = (value: FieldValues) => {
+    addTodo(value);
   };
 
-  useEffect(() => {
-    setIsLoadingTodo(true);
-    getAllTodo();
-  }, []);
-
   const addTodo: SubmitHandler<FieldValues> = (value) => {
-    // registerModal.onOpen();
-    // setIsLoading(true);
-    // const date = new Date(Date.now());
-    // const body = {
-    //   title: value.title,
-    //   status: false,
-    //   createdAt: date,
-    //   updatedAt: date,
-    // };
-    // axios
-    //   .post("/api/todo/create", {
-    //     ...body,
-    //   })
-    //   .then((resp) => {
-    //     toast.success("Todo has been successfully created!");
-    //     setTodo((prev) =>
-    //       prev.concat({
-    //         id: resp.data.id,
-    //         title: resp.data.title,
-    //         isComplete: false,
-    //         createdAt: Date.now(),
-    //         updatedAt: null,
-    //       })
-    //     );
-    //     reset();
-    //   })
-    //   .catch((e: any) => {
-    //     console.log(`ERROR ${e}`);
-    //     toast.success("Sorry, something went wrong");
-    //   })
-    //   .finally(() => setIsLoading(false));
+    setIsLoading(true);
+    const date = new Date(Date.now());
+    const body = {
+      title: value.title,
+      isComplete: false,
+      createdAt: date,
+      updatedAt: date,
+    };
+
+    axios
+      .post("/api/todo/create", {
+        ...body,
+      })
+      .then((resp) => {
+        toast.success("Todo has been successfully created!");
+        setTodo((prev) =>
+          prev.concat({
+            id: resp.data.id,
+            title: resp.data.title,
+            isComplete: false,
+            createdAt: Date.now(),
+            updatedAt: null,
+          })
+        );
+        reset();
+      })
+      .catch((e: any) => {
+        console.log(`ERROR ${e}`);
+        toast.success("Sorry, something went wrong");
+      })
+      .finally(() => setIsLoading(false));
   };
 
   const updateTodo = (todoId: string) => {
@@ -99,7 +77,7 @@ export default function Home() {
       .post(`/api/todo/update-status/${todoId}`)
       .then((resp) => {
         if (resp.data) {
-          getAllTodo();
+          getTodo();
         }
         console.log(`UPDAATE STATUS TODO ${resp.data}`);
       })
@@ -108,12 +86,40 @@ export default function Home() {
       });
   };
 
+  const getTodo = () => {
+    setIsLoadingTodo(true);
+    setTodo([]);
+    axios
+      .get(`/api/todo/get`)
+      .then((resp) => {
+        resp.data.todos.map((item: TodoProps) => {
+          setTodo((prev) =>
+            prev.concat({
+              createdAt: item.createdAt,
+              id: item.id,
+              isComplete: item.isComplete,
+              title: item.title,
+              updatedAt: item.updatedAt,
+            })
+          );
+        });
+      })
+      .catch((e) => console.log("ERROR GET TODO", e))
+      .finally(() => setIsLoadingTodo(false));
+  };
+
+  useEffect(() => {
+    if (session?.user?.email) {
+      getTodo();
+    }
+  }, [session?.user?.email]);
+
   const removeTodo = (todoId: string) => {
     axios
       .delete(`/api/todo/delete/${todoId}`)
       .then((resp) => {
-        console.log(`DELETE SUCCESS ${resp.status}`);
-        getAllTodo();
+        toast.success("Successfully delete todo");
+        getTodo();
       })
       .catch((error: any) => {
         console.log(`DELETE FAIL ${error}`);
@@ -138,12 +144,20 @@ export default function Home() {
 
   return (
     <main className="flex min-h-screen flex-col items-center">
-      <div className=" h-[180px] w-full bg-gradient-to-b from-purple-800 to-blue-800 justify-center flex">
-        <div className="py-5">
+      <div className=" h-[180px] w-full bg-gradient-to-b from-purple-800 to-blue-800 justify-center flex ">
+        <div className="flex flex-col items-center py-5">
           <h1 className="text-2xl font-semibold text-white">Todo List</h1>
+          {session?.user?.email && (
+            <button
+              className="mt-2 text-lg font-semibold text-white py-1 px-10 items-center bg-purple-700 hover:bg-purple-500 rounded-md"
+              onClick={() => signOut()}
+            >
+              Log out
+            </button>
+          )}
         </div>
       </div>
-      <div className="flex flex-col items-center absolute top-24">
+      <div className="flex flex-col items-center absolute top-28">
         <div className="w-[1048px] py-5 top-24 h-fit bg-white shadow-md rounded-md">
           <form
             onSubmit={handleSubmit(addTodo)}
@@ -155,24 +169,34 @@ export default function Home() {
             <input
               className=" shadow-md appearance-none rounded-md w-full py-2 px-3 text-gray-500 leading-tight focus:outline-none focus:shadow-outline"
               id="title"
+              disabled={isLoading || !session?.user?.email}
               type="text"
-              {...register("title", { required: true })}
-              placeholder="Do Something Today!"
+              {...register("title", {
+                required: true,
+              })}
+              placeholder={
+                !session?.user?.email
+                  ? "Sign in first to add your todo!"
+                  : "Do Something Today!"
+              }
             />
             {errors?.title?.type === "required" && (
               <p className="text-red-600">Title is required</p>
             )}
             <button
               disabled={isLoading}
-              // onClick={() => handleSubmit(addTodo)}
-              onClick={loginModal.onOpen}
+              onClick={
+                session?.user?.email
+                  ? handleSubmit(submitTodo)
+                  : () => loginModal.onOpen()
+              }
               className={
                 !isLoading
                   ? "mt-4 bg-orange-500 px-5 py-2 shadow-lg shadow-orange-300 rounded-md  text-white font-semibold text-lg"
                   : "mt-4 bg-gray-400 px-5 py-2 shadow-lg rounded-md text-white font-semibold text-lg cursor-none"
               }
             >
-              Add To Do
+              {session?.user?.email ? "Add To Do" : "Sign In"}
             </button>
           </form>
         </div>
@@ -191,10 +215,10 @@ export default function Home() {
               <div className="flex flex-row justify-between">
                 <div className="flex flex-col">
                   <p className="text-gray-700 font-medium text-lg">List</p>
-                  {todo.map((item, index) => (
+                  {todo.map((item) => (
                     <p
                       className="text-lg font-semibold text-gray-700"
-                      key={index}
+                      key={item.id}
                     >
                       {item.title}
                     </p>
@@ -202,9 +226,9 @@ export default function Home() {
                 </div>
                 <div className="flex flex-col items-center">
                   <p className="text-gray-700 font-medium text-lg">Status</p>
-                  {todo.map((item, index) =>
+                  {todo.map((item) =>
                     item.isComplete ? (
-                      <Complete key={index} status="Complete" />
+                      <Complete key={item.id} status="Complete" />
                     ) : (
                       <Pending key={item.id} status="Pending" />
                     )
