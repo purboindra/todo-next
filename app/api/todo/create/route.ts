@@ -1,12 +1,31 @@
 import { NextResponse } from "next/server";
 import prisma from "@/app/libs/prismadb";
+import { getCurrentUser } from "@/app/actions/getCurrentUser";
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const todo = await prisma?.todo.create({
-      data: body,
+    const currentUser = await getCurrentUser();
+
+    const { createdAt, updatedAt, title, isComplete } = body;
+
+    if (!currentUser) {
+      throw new NextResponse("Invalid Credentials", {
+        status: 401,
+      });
+    }
+
+    const todo = await prisma.todo.create({
+      data: {
+        isComplete,
+        title,
+        createdAt,
+        updatedAt,
+        userId: currentUser?.id,
+      },
     });
+
+    console.log("BODY ADD TODO", body);
 
     if (!todo) {
       throw new NextResponse("Failed Create TODO", { status: 401 });
