@@ -33,8 +33,9 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           type={type}
           placeholder={placeholder}
           className="mt-1 text-neutral-500 inline-flex h-[35px] w-full flex-1 items-center justify-center rounded-[4px] px-[10px] text-[15px] leading-none shadow-[0_0_0_1px] focus:shadow-[0_0_0_2px]"
+          disabled={disabled}
           {...props}
-        ></input>
+        />
       </div>
     );
   }
