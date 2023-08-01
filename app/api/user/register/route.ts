@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/app/libs/prismadb";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 
 export async function POST(req: Request) {
   try {
@@ -30,11 +31,38 @@ export async function POST(req: Request) {
       },
     });
 
-    return NextResponse.json(user, {
+    const tokenData = {
+      id: user.id,
+      username: name,
+      email: email,
+    };
+
+    const token = jwt.sign(tokenData, process.env.TOKEN_SECRET!, {
+      expiresIn: "1d",
+    });
+
+    console.log("TOKEN IS", token);
+
+    const updatedUserGetToken = await prisma.user.update({
+      where: {
+        id: user.id,
+      },
+
+      data: {
+        token: token,
+      },
+    });
+
+    const response = NextResponse.json(updatedUserGetToken, {
       status: 200,
       statusText: "User Successfully Created!",
     });
-  } catch (error) {
+
+    response.cookies.set("token", token, { httpOnly: true, path: "/" });
+
+    return response;
+  } catch (error: any) {
+    console.log("ERROR REGISTER USER CATCH", error);
     return new NextResponse("Internal Server Error", {
       status: 500,
     });
