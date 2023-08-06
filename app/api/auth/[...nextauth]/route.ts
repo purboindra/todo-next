@@ -5,6 +5,7 @@ import bcrypt from "bcrypt";
 
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import prisma from "@/app/libs/prismadb";
+import { randomBytes, randomUUID } from "crypto";
 
 export const authOptions: AuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -31,7 +32,11 @@ export const authOptions: AuthOptions = {
         });
 
         if (!user || !user.hashedPassword) {
-          throw Error("Invalid Credentials");
+          throw Error("Invalid Credentials or Wrong Password!", {
+            cause: {
+              status: 404,
+            },
+          });
         }
 
         const isCorrectPassword = await bcrypt.compare(
@@ -40,7 +45,11 @@ export const authOptions: AuthOptions = {
         );
 
         if (!isCorrectPassword) {
-          throw Error("Wrong password!");
+          throw Error("Wrong password!", {
+            cause: {
+              status: 404,
+            },
+          });
         }
 
         return user;
@@ -48,8 +57,18 @@ export const authOptions: AuthOptions = {
     }),
   ],
   debug: process.env.NODE_ENV === "development",
+  jwt: {
+    maxAge: 60 * 60 * 24 * 30,
+  },
   session: {
     strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60,
+    updateAge: 24 * 60 * 60,
+    generateSessionToken: () => {
+      const token = randomUUID?.() ?? randomBytes(32).toString("hex");
+      console.log("GENERATE SESSION TOKEN", token);
+      return token;
+    },
   },
   secret: process.env.NEXTAUTH_SECRET,
 };

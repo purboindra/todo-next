@@ -34,7 +34,19 @@ export default function Home() {
     },
   });
 
+  const handleSignout = () => {
+    axios
+      .get("/api/user/logout")
+      .then((resp) => {
+        if (resp.status == 200) {
+          signOut();
+        }
+      })
+      .catch((e: any) => console.log("ERROR LOG HANDLE SIGN OUT", e));
+  };
+
   const submitTodo = (value: FieldValues) => {
+    if (!session?.user) return;
     addTodo(value);
   };
 
@@ -150,7 +162,7 @@ export default function Home() {
           {session?.user?.email && (
             <button
               className="mt-2 text-lg font-semibold text-white py-1 px-10 items-center bg-purple-700 hover:bg-purple-500 rounded-md"
-              onClick={() => signOut()}
+              onClick={handleSignout}
             >
               Log out
             </button>
